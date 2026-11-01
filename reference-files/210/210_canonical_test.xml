@@ -1,0 +1,64 @@
+<ns0:Invoice CustomerId="230800" MessageName="InvoiceOutTest" MessageType="InvoiceOut" Direction="Outbound" SourceId="EDIStagingDB" DestinationId="Customer" Id="e7459ed5-72fd-4c8b-a73c-c907affad8eb" LoadId="30011" CompanyId="1" CreatedUTCDateTime="2024-11-27T17:09:25" SenderId="ECHO" ReceiverId="230800" xmlns:ns0="http://Echo.BSSR.Internal.Canonical.InvoiceV2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Header>
+		<TransactionSetheader TransactionSetIdentifierCode="210" TransactionSetControlNumber="0018" TransactionSetName="230800"/>
+		<BeginningSegmentForCarriersInvoice InvoiceNumber="30011-1" ShipmentIdentificationNumber="TFP00001232" ShipmentMethodOfPayment="PP" WeightUnitCode="L" InvoiceDate="2026-02-19" NetAmountDue="50000" DeliveryDate="2026-02-13T13:01:00" DateTimeQualifier="035" StandardCarrierAlphaCode="ECHS" BillingDate="2026-02-19" PickupDate="2026-02-09T13:01:00"/>
+		<Currency BillingCurrencyCode="USD"/>
+		<ReferenceList>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="TFP00001232" EDICode="BM"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="TFP00001232" EDICode="BN"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="13584376" EDICode="IT"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="FAP" EDICode="BT"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="E030" EDICode="SF"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="E012" EDICode="CN"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="CLASS_100" EDICode="IX"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="EDI204ECHS" EDICode="PO"/>
+			<ReferenceInformation ReferenceInformationQualifier="Optimizer Reference Name Will Be Here" ReferenceInformation="ZZ" EDICode="T5"/>
+			<ReferenceInformation ReferenceInformationQualifier="Reason Codes" ReferenceInformation="AI - Mechanical Failure" EDICode="RC"/>
+		</ReferenceList>
+		<DateTimes>
+			<DateTime DateQualifier="11" Date="2026-02-09T13:01:00"/>
+			<DateTime DateQualifier="35" Date="2026-02-13T13:01:00"/>
+		</DateTimes>
+		<PartyList>
+			<Party>
+				<Name EntityIdentifierCode="BT" Name="TOPPAN Packaging c/o RXO"/>
+				<AddressInformation AddressInformationLine1="11215 N Community House Rd"/>
+				<GeographicLocation CityName="PortLand" StateOrProvinceCode="OR" PostalCode="97208" CountryCode="US"/>
+			</Party>
+			<Party>
+				<Name EntityIdentifierCode="SH" Name="SONOCO ELK GROVE"/>
+				<AddressInformation AddressInformationLine1="2010 PRATT BLVD"/>
+				<GeographicLocation CityName="ELK GROVE VILLAGE" StateOrProvinceCode="IL" PostalCode="60007" CountryCode="US"/>
+			</Party>
+			<Party>
+				<Name EntityIdentifierCode="CN" Name="TOPPAN PACKAGING AMERICAS HOLDINGS"/>
+				<AddressInformation AddressInformationLine1="5674 SUPERIOR DRIVE  WHSE"/>
+				<GeographicLocation CityName="MORRISTOWN" StateOrProvinceCode="TN" PostalCode="37814" CountryCode="US"/>
+			</Party>
+		</PartyList>
+		<EquipmentList>
+			<Equipment EquipmentNumber="40HC" EquipmentType="" EquipmentDescription="" EquipmentDescriptionCode="TL" EquipmentLength="5300"/>
+		</EquipmentList>
+	</Header>
+	<Detail>
+		<StopList/>
+		<LineItemList>
+			<LineItem>
+				<AssignedNumber AssignedNumber="1"/>
+				<DescriptionMarksAndNumbers LadingLineItemNumber="1" LadingDescription="Fuel Surcharge"/>
+				<LineItemQuantityAndWeight LadingLineItemNumber="1" BilledRatedAsQuantity="1" BilledRatedAsQualifier="FR"/>
+				<RateAndCharges LadingLineItemNumber="1" FreightRate="200.00" RateValueQualifier="FR" Charge="200.00" RateCombinationPointCode="" SpecialChargeOrAllowanceCode="405"/>
+			</LineItem>
+			<LineItem>
+				<AssignedNumber AssignedNumber="2"/>
+				<DescriptionMarksAndNumbers LadingLineItemNumber="2" LadingDescription="Line Haul"/>
+				<LineItemQuantityAndWeight LadingLineItemNumber="1" BilledRatedAsQuantity="1" BilledRatedAsQualifier="FR"/>
+				<RateAndCharges LadingLineItemNumber="2" FreightRate="300.00" RateValueQualifier="FR" Charge="300.00" RateCombinationPointCode="" SpecialChargeOrAllowanceCode="LHS"/>
+			</LineItem>
+		</LineItemList>
+	</Detail>
+	<Summary>
+		<TotalWeightAndCharges Weight="20000" WeightQualifier="G" TotalCharges="50000" LadingQuantity="10" WeightUnitCode="L"/>
+		<TransactionSetTrailer NumberOfIncludedSegments="0" TransactionSetControlNumber="0018"/>
+	</Summary>
+</ns0:Invoice>

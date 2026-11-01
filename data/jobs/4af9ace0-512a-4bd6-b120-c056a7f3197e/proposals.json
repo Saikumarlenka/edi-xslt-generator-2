@@ -1,0 +1,195 @@
+[
+  {
+    "mapping_id": "MAP-ST01",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='ST01']/xsl:value-of",
+    "explanation": "Baseline already maps Header/TransactionSetheader/@TransactionSetIdentifierCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-ST02",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='ST02']/xsl:value-of",
+    "explanation": "Baseline already maps Header/TransactionSetheader/@TransactionSetControlNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B301",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='B301']]",
+    "expression": "false()",
+    "explanation": "B301 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B306",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='B306']/xsl:value-of",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@InvoiceDate",
+    "explanation": "Updated select expression to canonical path Header/BeginningSegmentForCarriersInvoice/@InvoiceDate",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B307",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='B307']/xsl:value-of",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@NetAmountDue",
+    "explanation": "Updated select expression to canonical path Header/BeginningSegmentForCarriersInvoice/@NetAmountDue",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B308",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='B308']]",
+    "expression": "false()",
+    "explanation": "B308 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B309",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='B309']/xsl:value-of",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@DeliveryDate",
+    "explanation": "Updated select expression to canonical path Header/BeginningSegmentForCarriersInvoice/@DeliveryDate",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B310",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B310']/xsl:value-of",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@DateTimeQualifier",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B311",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B311']/xsl:value-of",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@StandardCarrierAlphaCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B312",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='B312']/xsl:value-of",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@PickupDate",
+    "explanation": "Updated select expression to canonical path Header/BeginningSegmentForCarriersInvoice/@PickupDate",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B313",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='B313']]",
+    "expression": "false()",
+    "explanation": "B313 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B314",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='B314']]",
+    "expression": "false()",
+    "explanation": "B314 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-C301",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='C301']/xsl:value-of",
+    "explanation": "Baseline already maps Header/Currency/@BillingCurrencyCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-S501",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='S501']/xsl:value-of",
+    "explanation": "S501 is marked crossed-out in matrix; review for comment or suppression",
+    "confidence": "medium"
+  },
+  {
+    "mapping_id": "MAP-S501-2",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='S501']/xsl:value-of",
+    "explanation": "S501 is marked crossed-out in matrix; review for comment or suppression",
+    "confidence": "medium"
+  },
+  {
+    "mapping_id": "MAP-L002",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L002']/xsl:value-of",
+    "expression": "LineItemQuantityAndWeight/LineItemQuantityAndWeight/@BilledRatedAsQuantity",
+    "explanation": "Updated select expression to canonical path LineItemQuantityAndWeight/LineItemQuantityAndWeight/@BilledRatedAsQuantity",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L004",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L004']/xsl:value-of",
+    "expression": "LineItemQuantityAndWeight/TotalWeightAndCharges/@Weight",
+    "explanation": "Updated select expression to canonical path LineItemQuantityAndWeight/TotalWeightAndCharges/@Weight",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L005",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L005']/xsl:value-of",
+    "expression": "'L'",
+    "explanation": "Set static constant 'L' for L005",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L008",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L008']/xsl:value-of",
+    "expression": "LineItemQuantityAndWeight/TotalWeightAndCharges//@LadingQuantity",
+    "explanation": "Updated select expression to canonical path LineItemQuantityAndWeight/TotalWeightAndCharges//@LadingQuantity",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L009",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L009']/xsl:value-of",
+    "expression": "'PLT'",
+    "explanation": "Set static constant 'PLT' for L009",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L107",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='L107']]",
+    "expression": "false()",
+    "explanation": "L107 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L108",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='L108']]",
+    "expression": "false()",
+    "explanation": "L108 is crossed out in matrix; suppressed via test='false()'",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L301",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L301']/xsl:value-of",
+    "expression": "TotalWeightAndCharges/@Weight",
+    "explanation": "Updated select expression to canonical path TotalWeightAndCharges/@Weight",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L305",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L305']/xsl:value-of",
+    "expression": "TotalWeightAndCharges/@TotalCharges",
+    "explanation": "Updated select expression to canonical path TotalWeightAndCharges/@TotalCharges",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L311",
+    "action": "replace_select",
+    "target_xpath": "//*[local-name()='L311']/xsl:value-of",
+    "expression": "TotalWeightAndCharges/@LadingQuantity",
+    "explanation": "Updated select expression to canonical path TotalWeightAndCharges/@LadingQuantity",
+    "confidence": "high"
+  }
+]

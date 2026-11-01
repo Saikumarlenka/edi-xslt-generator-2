@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <!-- ============================================================ -->
+  <!--  Root Element: Invoice                                        -->
+  <!-- ============================================================ -->
+  <xs:element name="Invoice" type="InvoiceType"/>
+
+  <xs:complexType name="InvoiceType">
+    <xs:sequence>
+      <!-- Top-level envelope fields -->
+      <xs:element name="ActivityId"            type="xs:string" minOccurs="0"/>
+      <xs:element name="MessageName"           type="xs:string" minOccurs="0"/>
+      <xs:element name="MessageType"           type="xs:string" minOccurs="0"/>
+      <xs:element name="Direction"             type="xs:string" minOccurs="0"/>
+      <xs:element name="Version"               type="xs:string" minOccurs="0"/>
+      <xs:element name="SourceId"              type="xs:string" minOccurs="0"/>
+      <xs:element name="DestinationId"         type="xs:string" minOccurs="0"/>
+      <xs:element name="Id"                    type="xs:string" minOccurs="0"/>
+      <xs:element name="LoadId"                type="xs:string" minOccurs="0"/>
+      <xs:element name="StatusId"              type="xs:string" minOccurs="0"/>
+      <xs:element name="GroupId"               type="xs:string" minOccurs="0"/>
+      <xs:element name="GroupSeqNumber"        type="xs:string" minOccurs="0"/>
+      <xs:element name="GroupCount"            type="xs:string" minOccurs="0"/>
+      <xs:element name="EventTypeId"           type="xs:string" minOccurs="0"/>
+      <xs:element name="CreatedUTCDateTime"    type="xs:string" minOccurs="0"/>
+      <xs:element name="RegionId"              type="xs:string" minOccurs="0"/>
+      <xs:element name="CompanyId"             type="xs:string" minOccurs="0"/>
+      <xs:element name="ProgramId"             type="xs:string" minOccurs="0"/>
+      <xs:element name="AgentId"               type="xs:string" minOccurs="0"/>
+      <xs:element name="CustomerId"            type="xs:string" minOccurs="0"/>
+      <xs:element name="TestFlag"              type="xs:string" minOccurs="0"/>
+      <xs:element name="OperationName"         type="xs:string" minOccurs="0"/>
+      <xs:element name="SenderId"              type="xs:string" minOccurs="0"/>
+      <xs:element name="ReceiverId"            type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceType"         type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceValue"        type="xs:string" minOccurs="0"/>
+      <xs:element name="ConfigurationType"     type="xs:string" minOccurs="0"/>
+      <xs:element name="ConfigurationValue"    type="xs:string" minOccurs="0"/>
+      <xs:element name="UserDefined1"          type="xs:string" minOccurs="0"/>
+      <xs:element name="UserDefined2"          type="xs:string" minOccurs="0"/>
+      <xs:element name="UserDefined3"          type="xs:string" minOccurs="0"/>
+
+      <!-- Header -->
+      <xs:element name="Header" type="HeaderType" minOccurs="0"/>
+
+      <!-- Detail -->
+      <xs:element name="Detail" type="DetailType" minOccurs="0"/>
+
+      <!-- Summary -->
+      <xs:element name="Summary" type="SummaryType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  HEADER                                                       -->
+  <!-- ============================================================ -->
+  <xs:complexType name="HeaderType">
+    <xs:sequence>
+      <xs:element name="TransactionSetheader"             type="TransactionSetheaderType"             minOccurs="0"/>
+      <xs:element name="BeginningSegmentForCarriersInvoice" type="BeginningSegmentForCarriersInvoiceType" minOccurs="0"/>
+      <xs:element name="Currency"                         type="CurrencyType"                         minOccurs="0"/>
+      <xs:element name="TermsOfSale"                      type="TermsOfSaleType"                      minOccurs="0"/>
+      <xs:element name="ReferenceList"                    type="HeaderReferenceListType"              minOccurs="0"/>
+      <xs:element name="DateTimes"                        type="DateTimesType"                        minOccurs="0"/>
+      <xs:element name="Remarks"                          type="RemarksType"                          minOccurs="0"/>
+      <xs:element name="PartyList"                        type="HeaderPartyListType"                  minOccurs="0"/>
+      <xs:element name="EquipmentList"                    type="EquipmentListType"                    minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- TransactionSetheader -->
+  <xs:complexType name="TransactionSetheaderType">
+    <xs:sequence>
+      <xs:element name="TransactionSetIdentifierCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="TransactionSetControlNumber"  type="xs:string" minOccurs="0"/>
+      <xs:element name="TransactionSetName"           type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- BeginningSegmentForCarriersInvoice -->
+  <xs:complexType name="BeginningSegmentForCarriersInvoiceType">
+    <xs:sequence>
+      <xs:element name="ShipmentQualifier"              type="xs:string" minOccurs="0"/>
+      <xs:element name="InvoiceNumber"                  type="xs:string" minOccurs="0"/>
+      <xs:element name="ShipmentIdentificationNumber"   type="xs:string" minOccurs="0"/>
+      <xs:element name="ShipmentMethodOfPayment"        type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightUnitCode"                 type="xs:string" minOccurs="0"/>
+      <xs:element name="InvoiceDate"                    type="xs:string" minOccurs="0"/>
+      <xs:element name="NetAmountDue"                   type="xs:string" minOccurs="0"/>
+      <xs:element name="CorrectionIndicator"            type="xs:string" minOccurs="0"/>
+      <xs:element name="DeliveryDate"                   type="xs:string" minOccurs="0"/>
+      <xs:element name="DateTimeQualifier"              type="xs:string" minOccurs="0"/>
+      <xs:element name="StandardCarrierAlphaCode"       type="xs:string" minOccurs="0"/>
+      <xs:element name="BillingDate"                    type="xs:string" minOccurs="0"/>
+      <xs:element name="TariffServiceCode"              type="xs:string" minOccurs="0"/>
+      <xs:element name="TransportationTermsCode"        type="xs:string" minOccurs="0"/>
+      <xs:element name="PickupDate"                     type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Currency -->
+  <xs:complexType name="CurrencyType">
+    <xs:sequence>
+      <xs:element name="BillingCurrencyCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="PaymentCurrencyCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="RatedCurrencyCode"   type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- TermsOfSale -->
+  <xs:complexType name="TermsOfSaleType">
+    <xs:sequence>
+      <xs:element name="TermsTypeCode" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Header ReferenceList -->
+  <xs:complexType name="HeaderReferenceListType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformation" type="HeaderReferenceInformationType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="HeaderReferenceInformationType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformationQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation"          type="xs:string" minOccurs="0"/>
+      <xs:element name="EDICode"                       type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- DateTimes -->
+  <xs:complexType name="DateTimesType">
+    <xs:sequence>
+      <xs:element name="DateTime" type="DateTimeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DateTimeType">
+    <xs:sequence>
+      <xs:element name="Date"          type="xs:string" minOccurs="0"/>
+      <xs:element name="DateQualifier" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Remarks -->
+  <xs:complexType name="RemarksType">
+    <xs:sequence>
+      <xs:element name="Remark" type="RemarkType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="RemarkType">
+    <xs:sequence>
+      <xs:element name="FreeFormMessageLine1" type="xs:string" minOccurs="0"/>
+      <xs:element name="FreeFormMessageLine2" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Header PartyList -->
+  <xs:complexType name="HeaderPartyListType">
+    <xs:sequence>
+      <xs:element name="Party" type="PartyType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Shared PartyType (used in Header, PackagingList, Detail) -->
+  <xs:complexType name="PartyType">
+    <xs:sequence>
+      <xs:element name="Name" type="PartyNameType" minOccurs="0"/>
+      <xs:element name="AdditionalNameInformation" type="AdditionalNameInformationType" minOccurs="0"/>
+      <xs:element name="AddressInformation"        type="AddressInformationType"        minOccurs="0"/>
+      <xs:element name="GeographicLocation"        type="GeographicLocationType"        minOccurs="0"/>
+      <xs:element name="ReferenceInformation"      type="PartyReferenceInformationType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PartyNameType">
+    <xs:sequence>
+      <xs:element name="EntityIdentifierCode"     type="xs:string" minOccurs="0"/>
+      <xs:element name="Name"                     type="xs:string" minOccurs="0"/>
+      <xs:element name="IdentificationCodeQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="IdentificationCode"       type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AdditionalNameInformationType">
+    <xs:sequence>
+      <xs:element name="NameLine1" type="xs:string" minOccurs="0"/>
+      <xs:element name="NameLine2" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AddressInformationType">
+    <xs:sequence>
+      <xs:element name="AddressInformationLine1" type="xs:string" minOccurs="0"/>
+      <xs:element name="AddressInformationLine2" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="GeographicLocationType">
+    <xs:sequence>
+      <xs:element name="CityName"            type="xs:string" minOccurs="0"/>
+      <xs:element name="StateOrProvinceCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="PostalCode"          type="xs:string" minOccurs="0"/>
+      <xs:element name="CountryCode"         type="xs:string" minOccurs="0"/>
+      <xs:element name="LocationQualifier"   type="xs:string" minOccurs="0"/>
+      <xs:element name="LocationIdentifier"  type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PartyReferenceInformationType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformationQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation"          type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- EquipmentList -->
+  <xs:complexType name="EquipmentListType">
+    <xs:sequence>
+      <xs:element name="Equipment" type="EquipmentType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="EquipmentType">
+    <xs:sequence>
+      <xs:element name="EquipmentNumber"      type="xs:string" minOccurs="0"/>
+      <xs:element name="EquipmentType"        type="xs:string" minOccurs="0"/>
+      <xs:element name="EquipmentDescription" type="xs:string" minOccurs="0"/>
+      <xs:element name="EquipmentDescriptionCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="EquipmentLength"      type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  DETAIL                                                       -->
+  <!-- ============================================================ -->
+  <xs:complexType name="DetailType">
+    <xs:sequence>
+      <xs:element name="StopList"     type="StopListType"     minOccurs="0"/>
+      <xs:element name="LineItemList" type="LineItemListType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- StopList -->
+  <xs:complexType name="StopListType">
+    <xs:sequence>
+      <xs:element name="StopOffDetails" type="StopOffDetailsType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StopOffDetailsType">
+    <xs:sequence>
+      <xs:element name="StopSequenceNumber"  type="xs:string" minOccurs="0"/>
+      <xs:element name="StopReasonCode"      type="xs:string" minOccurs="0"/>
+      <xs:element name="StopNumFromDatabase" type="xs:string" minOccurs="0"/>
+      <xs:element name="PickStopNo"          type="xs:string" minOccurs="0"/>
+      <xs:element name="DropStopNo"          type="xs:string" minOccurs="0"/>
+      <xs:element name="Weight"              type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightUnitCode"      type="xs:string" minOccurs="0"/>
+      <xs:element name="ArrivalDate"         type="xs:string" minOccurs="0"/>
+      <xs:element name="DepartureDate"       type="xs:string" minOccurs="0"/>
+      <xs:element name="NameAddressInformation" type="StopNameAddressType" minOccurs="0"/>
+      <xs:element name="GeographicalInformation" type="StopGeographicalInformationType" minOccurs="0"/>
+      <xs:element name="ReferenceList"       type="StopReferenceListType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StopNameAddressType">
+    <xs:sequence>
+      <xs:element name="Name"         type="xs:string" minOccurs="0"/>
+      <xs:element name="AddressLine1" type="xs:string" minOccurs="0"/>
+      <xs:element name="AddressLine2" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StopGeographicalInformationType">
+    <xs:sequence>
+      <xs:element name="CityName"            type="xs:string" minOccurs="0"/>
+      <xs:element name="StateOrProvinceCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="PostalCode"          type="xs:string" minOccurs="0"/>
+      <xs:element name="CountryCode"         type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StopReferenceListType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformation" type="StopReferenceInformationType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StopReferenceInformationType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformationQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation"          type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- LineItemList -->
+  <xs:complexType name="LineItemListType">
+    <xs:sequence>
+      <xs:element name="LineItem" type="LineItemType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LineItemType">
+    <xs:sequence>
+      <xs:element name="AssignedNumber" type="AssignedNumberType" minOccurs="0"/>
+      <xs:element name="ReferenceList"  type="LineItemReferenceListType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AssignedNumberType">
+    <xs:sequence>
+      <xs:element name="AssignedNumber" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- LineItem ReferenceList -->
+  <xs:complexType name="LineItemReferenceListType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformation" type="LineItemReferenceInformationType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LineItemReferenceInformationType">
+    <xs:sequence>
+      <xs:element name="ReferenceInformationQualifier"  type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation"           type="xs:string" minOccurs="0"/>
+      <xs:element name="FreeFormDescription"            type="xs:string" minOccurs="0"/>
+      <xs:element name="Date"                           type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceIdentifier"            type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformationQualifier1" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation1"          type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformationQualifier2" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation2"          type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformationQualifier3" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceInformation3"          type="xs:string" minOccurs="0"/>
+      <!-- DescriptionMarksAndNumbers -->
+      <xs:element name="DescriptionMarksAndNumbers"     type="DescriptionMarksAndNumbersType" minOccurs="0"/>
+      <!-- LineItemQuantityAndWeight -->
+      <xs:element name="LineItemQuantityAndWeight"      type="LineItemQuantityAndWeightType"   minOccurs="0"/>
+      <!-- RateAndCharges -->
+      <xs:element name="RateAndCharges"                 type="RateAndChargesType"              minOccurs="0" maxOccurs="unbounded"/>
+      <!-- PackagingList -->
+      <xs:element name="PackagingList"                  type="PackagingListType"               minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- DescriptionMarksAndNumbers -->
+  <xs:complexType name="DescriptionMarksAndNumbersType">
+    <xs:sequence>
+      <xs:element name="LadingLineItemNumber"    type="xs:string" minOccurs="0"/>
+      <xs:element name="LadingDescription"       type="xs:string" minOccurs="0"/>
+      <xs:element name="CommodityCode"           type="xs:string" minOccurs="0"/>
+      <xs:element name="CommodityCodeQualifier"  type="xs:string" minOccurs="0"/>
+      <xs:element name="CommodityCodeQualifier2" type="xs:string" minOccurs="0"/>
+      <xs:element name="CommodityCode2"          type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- LineItemQuantityAndWeight -->
+  <xs:complexType name="LineItemQuantityAndWeightType">
+    <xs:sequence>
+      <xs:element name="LadingLineItemNumber"          type="xs:string" minOccurs="0"/>
+      <xs:element name="BilledRatedAsQuantity"         type="xs:string" minOccurs="0"/>
+      <xs:element name="BilledRatedAsQualifier"        type="xs:string" minOccurs="0"/>
+      <xs:element name="Weight"                        type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightQualifier"               type="xs:string" minOccurs="0"/>
+      <xs:element name="LadingQuantity"                type="xs:string" minOccurs="0"/>
+      <xs:element name="LadingQuantityPackagingFormCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightUnitCode"                type="xs:string" minOccurs="0"/>
+      <xs:element name="Quantity"                      type="xs:string" minOccurs="0"/>
+      <xs:element name="QuantityPackagingFormCode"     type="xs:string" minOccurs="0"/>
+      <xs:element name="YesNoConditionOrResponseCode"  type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- RateAndCharges -->
+  <xs:complexType name="RateAndChargesType">
+    <xs:sequence>
+      <xs:element name="LadingLineItemNumber"       type="xs:string" minOccurs="0"/>
+      <xs:element name="FreightRate"                type="xs:string" minOccurs="0"/>
+      <xs:element name="RateValueQualifier"         type="xs:string" minOccurs="0"/>
+      <xs:element name="Charge"                     type="xs:string" minOccurs="0"/>
+      <xs:element name="RateCombinationPointCode"   type="xs:string" minOccurs="0"/>
+      <xs:element name="SpecialChargeOrAllowanceCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="SpecialChargeDescription"   type="xs:string" minOccurs="0"/>
+      <xs:element name="Amount"                     type="xs:string" minOccurs="0"/>
+      <xs:element name="LadingValue"                type="xs:string" minOccurs="0"/>
+      <xs:element name="Measurement"                type="MeasurementType"     minOccurs="0"/>
+      <xs:element name="TariffReference"            type="TariffReferenceType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Measurement -->
+  <xs:complexType name="MeasurementType">
+    <xs:sequence>
+      <xs:element name="Length"                  type="xs:string" minOccurs="0"/>
+      <xs:element name="Width"                   type="xs:string" minOccurs="0"/>
+      <xs:element name="Height"                  type="xs:string" minOccurs="0"/>
+      <xs:element name="MeasurementUnitQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="Quantity"                type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- TariffReference -->
+  <xs:complexType name="TariffReferenceType">
+    <xs:sequence>
+      <xs:element name="LadingLineItemNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="TariffAgencyCode"     type="xs:string" minOccurs="0"/>
+      <xs:element name="TariffNumber"         type="xs:string" minOccurs="0"/>
+      <xs:element name="TariffSection"        type="xs:string" minOccurs="0"/>
+      <xs:element name="FreightClassCode"     type="xs:string" minOccurs="0"/>
+      <xs:element name="TariffDistance"       type="xs:string" minOccurs="0"/>
+      <xs:element name="DistanceQualifier"    type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- PackagingList -->
+  <xs:complexType name="PackagingListType">
+    <xs:sequence>
+      <xs:element name="PackageDetail" type="PackageDetailType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PackageDetailType">
+    <xs:sequence>
+      <xs:element name="WeightQualifier"  type="xs:string" minOccurs="0"/>
+      <xs:element name="Weight"           type="xs:string" minOccurs="0"/>
+      <xs:element name="Zone"             type="xs:string" minOccurs="0"/>
+      <xs:element name="ServiceStandard"  type="xs:string" minOccurs="0"/>
+      <xs:element name="ServiceLevelCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="AdditionalShippingOrFreightInformation"
+                  type="AdditionalShippingOrFreightInformationType" minOccurs="0"/>
+      <xs:element name="PartyList"        type="PackagePartyListType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- AdditionalShippingOrFreightInformation (shared, used in PackageDetail & Summary area) -->
+  <xs:complexType name="AdditionalShippingOrFreightInformationType">
+    <xs:sequence>
+      <xs:element name="ReferenceIdentificationQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReferenceIdentification"          type="xs:string" minOccurs="0"/>
+      <xs:element name="Free-formDescription"             type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- PackageDetail PartyList -->
+  <xs:complexType name="PackagePartyListType">
+    <xs:sequence>
+      <xs:element name="Party" type="PartyType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  SUMMARY                                                      -->
+  <!-- ============================================================ -->
+  <xs:complexType name="SummaryType">
+    <xs:sequence>
+      <xs:element name="TotalWeightAndCharges" type="TotalWeightAndChargesType" minOccurs="0"/>
+      <xs:element name="TransactionSetTrailer" type="TransactionSetTrailerType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TotalWeightAndChargesType">
+    <xs:sequence>
+      <xs:element name="Weight"             type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightQualifier"    type="xs:string" minOccurs="0"/>
+      <xs:element name="FreightRate"        type="xs:string" minOccurs="0"/>
+      <xs:element name="RateValueQualifier" type="xs:string" minOccurs="0"/>
+      <xs:element name="TotalCharges"       type="xs:string" minOccurs="0"/>
+      <xs:element name="LadingQuantity"     type="xs:string" minOccurs="0"/>
+      <xs:element name="WeightUnitCode"     type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TransactionSetTrailerType">
+    <xs:sequence>
+      <xs:element name="NumberOfIncludedSegments"  type="xs:string" minOccurs="0"/>
+      <xs:element name="TransactionSetControlNumber" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

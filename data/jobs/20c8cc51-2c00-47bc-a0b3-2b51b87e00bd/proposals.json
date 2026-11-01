@@ -1,0 +1,328 @@
+[
+  {
+    "mapping_id": "MAP-SEG-R3",
+    "action": "comment_out",
+    "target_xpath": "//*[local-name()='R3']",
+    "explanation": "Segment R3 is not active in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-SEG-K1",
+    "action": "comment_out",
+    "target_xpath": "//*[local-name()='K1']",
+    "explanation": "Segment K1 is not active in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-SEG-S5Loop1",
+    "action": "comment_out",
+    "target_xpath": "//*[local-name()='S5Loop1']",
+    "explanation": "Segment S5Loop1 is not active in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-SEG-L7",
+    "action": "comment_out",
+    "target_xpath": "//*[local-name()='L7']",
+    "explanation": "Segment L7 is not active in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-ST01",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='ST01']/xsl:value-of",
+    "explanation": "Baseline already maps Header/TransactionSetheader/@TransactionSetIdentifierCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-ST02",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='ST02']/xsl:value-of",
+    "explanation": "Baseline already maps Header/TransactionSetheader/@TransactionSetControlNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B301",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='B301']]",
+    "explanation": "B301 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B302",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B302']//xsl:with-param[@name='inputText']",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@InvoiceNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B303",
+    "action": "replace_test",
+    "target_xpath": "//xsl:if[./*[local-name()='B303']]",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@ShipmentIdentificationNumber != '' ",
+    "explanation": "B303 null guard for ShipmentIdentificationNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B303-param",
+    "action": "replace_select",
+    "target_xpath": "//xsl:if[./*[local-name()='B303']]//xsl:with-param[@name='inputText']",
+    "expression": "Header/BeginningSegmentForCarriersInvoice/@ShipmentIdentificationNumber",
+    "explanation": "B303 inputText select for ShipmentIdentificationNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B304",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B304']/xsl:value-of",
+    "explanation": "B304 already dynamically maps ShipmentMethodOfPayment",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B305",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B305']/xsl:value-of",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@WeightUnitCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B306",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B306']/xsl:value-of",
+    "explanation": "Baseline already maps concat(substring($InvoiceDate, 1, 4), substring($InvoiceDate, 6, 2), substring($InvoiceDate, 9, 2))",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B307",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B307']/xsl:value-of",
+    "explanation": "Baseline already maps translate(Header/BeginningSegmentForCarriersInvoice/@NetAmountDue,'.','')",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B308",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='B308']]",
+    "explanation": "B308 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B309",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B309']/xsl:value-of",
+    "explanation": "Baseline already maps concat(substring($DeliveryDate, 1, 4), substring($DeliveryDate, 6, 2), substring($DeliveryDate, 9, 2))",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B310",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B310']/xsl:value-of",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@DateTimeQualifier",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B311",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B311']/xsl:value-of",
+    "explanation": "Baseline already maps Header/BeginningSegmentForCarriersInvoice/@StandardCarrierAlphaCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B312",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='B312']/xsl:value-of",
+    "explanation": "Baseline already maps concat(substring($PickupDate, 1, 4), substring($PickupDate, 6, 2), substring($PickupDate, 9, 2))",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B313",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='B313']]",
+    "explanation": "B313 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-B314",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='B314']]",
+    "explanation": "B314 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-C201",
+    "action": "replace_node",
+    "target_xpath": "//*[local-name()='C2']",
+    "expression": "<ns0:C2 xmlns:ns0=\"http://Echo.BSSR.Schemas.EDI.X12_00401.EDI210/v1.0\">\n\t\t\t\t<C201>R</C201>\n\t\t\t\t<C202>25</C202>\n\t\t\t\t<C203>TFP-001</C203>\n\t\t\t</ns0:C2>",
+    "explanation": "Set hardcoded constants for C2 (C201, C202, C203)",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-C301",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='C301']/xsl:value-of",
+    "explanation": "Baseline already maps Header/Currency/@BillingCurrencyCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N901",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N901']/xsl:value-of",
+    "explanation": "N901 maps @EDICode per matrix",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N902",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N902']//xsl:with-param[@name='inputText']",
+    "explanation": "N902 maps @ReferenceInformation via CleanAlphaField(30)",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N101",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N101']/xsl:value-of",
+    "explanation": "Baseline already maps Name/@EntityIdentifierCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N101-2",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N101']/xsl:value-of",
+    "explanation": "Baseline already maps Name/@EntityIdentifierCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N101-3",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N101']/xsl:value-of",
+    "explanation": "Baseline already maps Name/@EntityIdentifierCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N702",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N702']/xsl:value-of",
+    "explanation": "Baseline already maps @EquipmentNumber",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N711",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N711']/xsl:value-of",
+    "explanation": "Baseline already maps @EquipmentDescriptionCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-N715",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='N715']/xsl:value-of",
+    "explanation": "Baseline already maps @EquipmentLength",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L502",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L502']//xsl:with-param[@name='inputText']",
+    "explanation": "Baseline already maps DescriptionMarksAndNumbers/@LadingDescription",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L002",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L002']/xsl:value-of",
+    "explanation": "Baseline already maps LineItemQuantityAndWeight/@BilledRatedAsQuantity",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L003",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L003']/xsl:value-of",
+    "explanation": "Baseline already maps LineItemQuantityAndWeight/@BilledRatedAsQualifier",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L004",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L004']/xsl:value-of",
+    "explanation": "Baseline already maps //Summary/TotalWeightAndCharges/@Weight",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L008",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L008']/xsl:value-of",
+    "explanation": "Baseline already maps //Summary/TotalWeightAndCharges/@LadingQuantity",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L011",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L011']/xsl:value-of",
+    "explanation": "Baseline already maps LineItemQuantityAndWeight/@WeightUnitCode",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L102",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L102']/xsl:value-of",
+    "explanation": "Baseline already maps RateAndCharges/@FreightRate",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L103",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L103']/xsl:value-of",
+    "explanation": "Baseline already maps RateAndCharges/@RateValueQualifier",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L104",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L104']/xsl:value-of",
+    "explanation": "Baseline already maps RateAndCharges/@Charge",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L107",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='L107']]",
+    "explanation": "L107 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L108",
+    "action": "replace_node",
+    "target_xpath": "//xsl:if[./*[local-name()='L108']]",
+    "expression": "<xsl:choose xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n\t\t\t\t\t\t\t\t<xsl:when test=\"RateAndCharges/@SpecialChargeOrAllowanceCode = '405'\">\n\t\t\t\t\t\t\t\t\t<L108>FUE</L108>\n\t\t\t\t\t\t\t\t</xsl:when>\n\t\t\t\t\t\t\t\t<xsl:otherwise>\n\t\t\t\t\t\t\t\t\t<xsl:if test=\"RateAndCharges/@SpecialChargeOrAllowanceCode != '' and RateAndCharges/@SpecialChargeOrAllowanceCode != 'LHS'\">\n\t\t\t\t\t\t\t\t\t\t<L108>\n\t\t\t\t\t\t\t\t\t\t\t<xsl:value-of select=\"RateAndCharges/@SpecialChargeOrAllowanceCode\" />\n\t\t\t\t\t\t\t\t\t\t</L108>\n\t\t\t\t\t\t\t\t\t</xsl:if>\n\t\t\t\t\t\t\t\t</xsl:otherwise>\n\t\t\t\t\t\t\t</xsl:choose>",
+    "explanation": "L108 rule: translate 405 to FUE and omit LHS",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L112",
+    "action": "comment_out",
+    "target_xpath": "//xsl:if[./*[local-name()='L112']]",
+    "explanation": "L112 is crossed out in matrix; commented out in XSLT",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L301",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L301']/xsl:value-of",
+    "explanation": "Baseline already maps @Weight",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L305",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L305']/xsl:value-of",
+    "explanation": "Baseline already maps translate(@TotalCharges,',','')",
+    "confidence": "high"
+  },
+  {
+    "mapping_id": "MAP-L311",
+    "action": "reuse_existing",
+    "target_xpath": "//*[local-name()='L311']/xsl:value-of",
+    "explanation": "Baseline already maps @LadingQuantity",
+    "confidence": "high"
+  }
+]
