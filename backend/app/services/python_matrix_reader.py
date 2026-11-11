@@ -5,11 +5,30 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from app.models.mapping import MappingRecord, MappingSpecification
+from app.models.mapping import MappingRecord, MappingSpecification, ReviewPoint
+from app.services.canonical_path_resolver import CanonicalPathResolver
 
 log = logging.getLogger(__name__)
 
 DOCX_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+
+
+def is_lx_special_charge_filter(text: str) -> bool:
+    """
+    Detects conditions requiring LineItem / LXLoop1 to exclude product line items
+    or populate only when SpecialChargeOrAllowanceCode is not empty.
+    """
+    if not text:
+        return False
+    t = text.lower()
+    has_sp_charge = any(k in t for k in ("specialcharge", "special charge", "special_charge", "charge allowance", "charge or allowance"))
+    has_not_empty = any(k in t for k in ("not empty", "must not be empty", "is not empty", "!= ''", '!= ""', "!= null", "<> ''", "non empty", "non-empty"))
+    has_prod_filter = any(k in t for k in ("do not product", "do not include product", "exclude product", "no product line", "omit product", "without product", "dont need product", "don't need product"))
+    has_populate_only = any(k in t for k in ("populate only", "only when", "only for", "needs only"))
+
+    if (has_sp_charge and has_not_empty) or (has_sp_charge and has_populate_only) or has_prod_filter:
+        return True
+    return False
 
 
 class PythonMatrixReaderService:
@@ -23,6 +42,9 @@ class PythonMatrixReaderService:
     - Identifies Constants, Static Values, and Hardcoded literals (if no path, marked as constant).
     - Detects Strikethrough / Crossed-out elements (via XML runs and text notes).
     """
+
+    def __init__(self):
+        self._canonical_resolver = CanonicalPathResolver()
 
     def read_matrix(self, docx_path: Path, transaction: str) -> MappingSpecification:
         path = Path(docx_path)
@@ -88,7 +110,7 @@ class PythonMatrixReaderService:
         lookup_translations = self._extract_lookup_translations(lookup_tables)
 
         # Parse the main mapping table
-        mappings = self._extract_mappings_from_table(main_table, transaction, lookup_translations)
+        mappings, review_points = self._extract_mappings_from_table(main_table, transaction, lookup_translations)
 
         if not mappings:
             raise ValueError("No valid EDI mapping rows could be extracted from matrix.")
@@ -97,7 +119,8 @@ class PythonMatrixReaderService:
             f"Extracted {len(mappings)} EDI {transaction} mapping rows using Python deterministic parser. "
             f"Identified {sum(1 for m in mappings if m.is_constant)} constants, "
             f"{sum(1 for m in mappings if m.is_crossed)} crossed-out/excluded elements, and "
-            f"{sum(1 for m in mappings if m.conditions)} conditional elements."
+            f"{sum(1 for m in mappings if m.conditions)} conditional elements. "
+            f"Generated {len(review_points)} schema validation review points."
         )
 
         return MappingSpecification(
@@ -105,13 +128,15 @@ class PythonMatrixReaderService:
             document_summary=summary,
             mappings=mappings,
             extraction_method="python",
+            review_points=review_points,
         )
 
     def _extract_mappings_from_table(
         self, tbl: ET.Element, transaction: str, lookups: Dict[str, Any]
-    ) -> List[MappingRecord]:
+    ) -> tuple[List[MappingRecord], List[ReviewPoint]]:
         rows = tbl.findall("./w:tr", DOCX_NS)
         mappings: List[MappingRecord] = []
+        review_points: List[ReviewPoint] = []
         id_counts: Dict[str, int] = {}
 
         # Hierarchical context trackers
@@ -205,6 +230,11 @@ class PythonMatrixReaderService:
             if dest == "L108":
                 is_crossed = False
 
+            # 3. Explicitly added/active in BA comments or notes -> NOT crossed out
+            lower_ba = ba_comment.strip().lower()
+            if any(w in lower_ba.split() for w in ("add", "added", "active", "new", "include")) or lower_ba.startswith("add"):
+                is_crossed = False
+
             # ── Element vs Segment / Loop Container Check ──
             # Elements have format like ST01, B302, C201, N901, G6201, L108, L301, S501 (ends with 2 digits)
             elem_match = re.match(r"^([A-Z][A-Z0-9]{1,3}?)(\d{2})$", dest)
@@ -213,34 +243,73 @@ class PythonMatrixReaderService:
                 # This is a segment or loop container row!
                 # E.g. ST, B3, C2, C3, N9, G62, R3, K1, N1Loop1, N1, N3, N4, S5Loop1, S5, N7Loop1, N7, LXLoop1, LX, L5, L0, L1, L7, L3
                 if dest:
-                    current_parent_seg = dest
-                    # When a new top segment starts, reset parent condition unless specified
-                    if not any(k in source_val for k in ("Where ", "If ", "when ")):
+                    clean_dest = dest.split("/")[0].strip()
+
+                    # Only reset parent condition if we're moving to an entirely new top-level container/section
+                    # Do NOT reset parent condition if moving between parent loop and its child segment (e.g. LXLoop1 -> LX, N1Loop1 -> N1)
+                    is_subsegment_transition = (
+                        (current_parent_seg in ("LXLoop1", "LX") and clean_dest in ("LXLoop1", "LX")) or
+                        (current_parent_seg in ("N1Loop1", "N1") and clean_dest in ("N1Loop1", "N1")) or
+                        (current_parent_seg in ("N7Loop1", "N7") and clean_dest in ("N7Loop1", "N7")) or
+                        (current_parent_seg in ("S5Loop1", "S5") and clean_dest in ("S5Loop1", "S5"))
+                    )
+
+                    combined_container_text = f"{source_val} {ba_comment} {notes}".strip()
+                    if is_lx_special_charge_filter(combined_container_text):
+                        current_parent_cond = "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"
+                    elif not is_subsegment_transition and not any(k in source_val for k in ("Where ", "If ", "when ")):
                         current_parent_cond = ""
 
+                    current_parent_seg = dest
+
                     # Auto-assign proper canonical parent path for known segments
-                    if dest == "L7":
-                        current_parent_path = "Detail/LineItem/DescriptionMarksAndNumbers"
-                    elif dest in ("L5", "LXLoop1/L5"):
-                        current_parent_path = "Detail/LineItem/DescriptionMarksAndNumbers"
-                    elif dest in ("L0", "LXLoop1/L0"):
-                        current_parent_path = "Detail/LineItem/LineItemQuantityAndWeight"
-                    elif dest in ("L1", "LXLoop1/L1"):
-                        current_parent_path = "Detail/LineItem/RateAndCharges"
-                    elif dest == "L3":
-                        current_parent_path = "Summary/TotalWeightAndCharges"
+                    SEGMENT_CANONICAL_CONTAINERS = {
+                        "ST": "Header/TransactionSetheader",
+                        "B3": "Header/BeginningSegmentForCarriersInvoice",
+                        "C2": "Header",
+                        "C3": "Header/Currency",
+                        "N9": "Header/ReferenceList",
+                        "G62": "Header/DateTimes",
+                        "R3": "Header",
+                        "K1": "Header",
+                        "N1Loop1": "Header/PartyList",
+                        "N1": "Header/PartyList/Party",
+                        "N3": "Header/PartyList/Party/AddressInformation",
+                        "N4": "Header/PartyList/Party/GeographicLocation",
+                        "N7Loop1": "Header/EquipmentList",
+                        "N7": "Header/EquipmentList/Equipment",
+                        "S5Loop1": "Detail/StopList",
+                        "S5": "Detail/StopList",
+                        "LXLoop1": "Detail/LineItemList",
+                        "LX": "Detail/LineItemList/LineItem",
+                        "L5": "Detail/LineItem/DescriptionMarksAndNumbers",
+                        "L0": "Detail/LineItem/LineItemQuantityAndWeight",
+                        "L1": "Detail/LineItem/RateAndCharges",
+                        "L7": "Detail/LineItem/DescriptionMarksAndNumbers",
+                        "L3": "Summary/TotalWeightAndCharges",
+                        "SE": "Summary/TransactionSetTrailer",
+                    }
+                    if clean_dest in SEGMENT_CANONICAL_CONTAINERS:
+                        current_parent_path = SEGMENT_CANONICAL_CONTAINERS[clean_dest]
 
                 if source_val:
                     # Check if source contains a condition (e.g. "Where Name/@EntityIdentifierCode = BT" or "If commoditycode2 != NULL")
-                    if any(k in source_val for k in ("Where ", "where ", "If ", "IF ", "when ", "When ")):
+                    if is_lx_special_charge_filter(source_val):
+                        current_parent_cond = "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"
+                    elif any(k in source_val for k in ("Where ", "where ", "If ", "IF ", "when ", "When ")):
                         current_parent_cond = source_val
-                    elif source_val not in ("Header", "Summary", "Detail/LineItem"):
-                        # Normalize path
+                    elif source_val not in ("Header", "Summary", "Detail/LineItem", "Detail"):
                         clean_path = re.sub(r"\s*/\s*", "/", source_val).strip()
-                        current_parent_path = clean_path
+                        if "Reference" in clean_path:
+                            current_parent_path = "Header/ReferenceList"
+                        else:
+                            current_parent_path = clean_path
 
-                if notes and any(k in notes for k in ("Where ", "where ", "If ", "IF ", "when ", "When ")):
-                    current_parent_cond = notes
+                if notes:
+                    if is_lx_special_charge_filter(notes):
+                        current_parent_cond = "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"
+                    elif any(k in notes for k in ("Where ", "where ", "If ", "IF ", "when ", "When ")):
+                        current_parent_cond = notes
 
                 # Segment container rows are not mapping elements themselves
                 continue
@@ -256,7 +325,14 @@ class PythonMatrixReaderService:
 
             # ── Conditions Identification ──
             conditions: List[str] = []
-            if current_parent_cond:
+            combined_elem_text = f"{source_val} {ba_comment} {notes}".strip()
+            if is_lx_special_charge_filter(combined_elem_text) or is_lx_special_charge_filter(current_parent_cond):
+                lx_cond = "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"
+                if lx_cond not in conditions:
+                    conditions.append(lx_cond)
+                current_parent_cond = lx_cond
+
+            if current_parent_cond and current_parent_cond not in conditions:
                 conditions.append(current_parent_cond)
 
             # Check for element-level condition in source or notes
@@ -274,10 +350,16 @@ class PythonMatrixReaderService:
             # Rule: "if there is no path means it is a constant"
             # Rule: "if it found hardcoded or related stuff it should harcode follow the parent condtions and paths"
             is_constant = False
+            is_not_in_schema = False
             constants: List[str] = []
             canonical_path = ""
+            suggested_path: Optional[str] = None
+            path_correction_reason: Optional[str] = None
+            schema_validation_status = "valid"
             transformations: List[str] = []
             qualifiers: List[str] = []
+            loop_context = ""
+            loop_relative_path = ""
 
             # Check for explicit hardcoded / literal patterns
             hardcoded_match = re.search(
@@ -289,36 +371,104 @@ class PythonMatrixReaderService:
 
             # Check for path tokens: / or @
             has_path_tokens = "/" in source_val or "@" in source_val
+            lower_source = source_val.lower()
 
             if hardcoded_match:
                 is_constant = True
                 val = hardcoded_match.group(1).strip().strip("'\"")
                 if val:
                     constants.append(val)
+                schema_validation_status = "constant"
+                loop_context, _ = self._canonical_resolver.get_loop_context_and_relative(element_code, "", current_parent_path)
             elif quoted_literals and not has_path_tokens:
                 is_constant = True
                 constants.extend(quoted_literals)
-            elif not source_val or source_val.lower() in ("not mapped", "none by default"):
+                schema_validation_status = "constant"
+                loop_context, _ = self._canonical_resolver.get_loop_context_and_relative(element_code, "", current_parent_path)
+            elif not source_val or lower_source in ("not mapped", "none by default"):
                 is_constant = True
-            elif "position()" in source_val.lower() or "position in loop" in source_val.lower():
-                # Loop position expression
+                schema_validation_status = "constant"
+                loop_context, _ = self._canonical_resolver.get_loop_context_and_relative(element_code, "", current_parent_path)
+            elif "position()" in lower_source or "position in loop" in lower_source:
                 canonical_path = "position()"
                 transformations.append("loop_position")
-            elif not has_path_tokens:
-                # No path provided -> mark as constant
+                loop_context, loop_relative_path = self._canonical_resolver.get_loop_context_and_relative(element_code, "position()", current_parent_path)
+            elif not has_path_tokens and not any(k in lower_source for k in ("commodity", "tariff", "currency", "reference", "charge", "rate", "invoice", "date", "entity", "party", "name", "weight")):
                 is_constant = True
                 if source_val:
                     constants.append(source_val)
+                schema_validation_status = "constant"
+                loop_context, _ = self._canonical_resolver.get_loop_context_and_relative(element_code, "", current_parent_path)
             else:
-                # Resolve Canonical Path
-                canonical_path = self._resolve_canonical_path(source_val, current_parent_path)
+                # Resolve Canonical Path using schema & diagnostics!
+                diag = self._canonical_resolver.resolve_with_diagnostics(
+                    source_val=source_val,
+                    parent_path=current_parent_path,
+                    destination_element=element_code,
+                    transaction=transaction,
+                )
+                canonical_path = diag.canonical_path
+                loop_context = diag.loop_context
+                loop_relative_path = diag.loop_relative_path
+                if diag.issue_type == "not_in_schema":
+                    is_not_in_schema = True
+                    schema_validation_status = "not_in_schema"
+                    path_correction_reason = diag.reason
+                    if diag.reason and diag.reason not in combined_notes:
+                        combined_notes.append(f"[Schema Warning] {diag.reason}")
+
+                    review_points.append(
+                        ReviewPoint(
+                            mapping_id=mapping_id,
+                            destination_element=element_code,
+                            destination_segment=seg_code,
+                            source_document_reference=source_val,
+                            source_canonical_path=canonical_path,
+                            suggested_canonical_path=canonical_path,
+                            loop_context=diag.loop_context,
+                            loop_relative_path=diag.loop_relative_path,
+                            suggested_loop_path=diag.suggested_loop_path,
+                            issue_type="not_in_schema",
+                            message=diag.reason,
+                            confidence=diag.confidence,
+                            status="pending_confirmation",
+                        )
+                    )
+                elif diag.is_corrected:
+                    suggested_path = diag.suggested_path
+                    path_correction_reason = diag.reason
+                    schema_validation_status = "corrected"
+                    if diag.reason and diag.reason not in combined_notes:
+                        combined_notes.append(f"[Schema Suggestion] {diag.reason}")
+
+                    review_points.append(
+                        ReviewPoint(
+                            mapping_id=mapping_id,
+                            destination_element=element_code,
+                            destination_segment=seg_code,
+                            source_document_reference=source_val,
+                            source_canonical_path=canonical_path,
+                            suggested_canonical_path=diag.suggested_path,
+                            loop_context=diag.loop_context,
+                            loop_relative_path=diag.loop_relative_path,
+                            suggested_loop_path=diag.suggested_loop_path,
+                            issue_type=diag.issue_type,
+                            message=diag.reason,
+                            confidence=diag.confidence,
+                            status="applied",
+                        )
+                    )
 
             # Check for date / formatting transformations
             if any(term in (notes + " " + source_val).lower() for term in ("yyyymmdd", "date format", "format yyyymmdd")):
                 transformations.append("format_date_YYYYMMDD")
 
             # Check for code translations / lookups
-            if element_code in lookups:
+            has_table_ref = any("table" in txt.lower() for txt in (notes, ba_comment, source_val))
+            has_inline_translation = bool(re.search(r"(?:translate|send)\s+['\"][A-Za-z0-9_-]+['\"]", source_val, re.I))
+            is_pure_omission = bool(re.search(r"\bif\b.*\bthen\s+omit\b", source_val, re.I)) and not has_inline_translation and not has_table_ref
+
+            if element_code in lookups and (has_table_ref or (has_inline_translation and not is_pure_omission)):
                 for k, v in lookups[element_code].items():
                     transformations.append(f"code_map_{k}_to_{v}")
 
@@ -357,100 +507,28 @@ class PythonMatrixReaderService:
                 implementation_status=status,
                 is_crossed=is_crossed,
                 is_constant=is_constant,
+                is_not_in_schema=is_not_in_schema,
                 parent_segment=current_parent_seg,
                 parent_path=current_parent_path,
                 parent_condition=current_parent_cond,
+                loop_context=loop_context,
+                loop_relative_path=loop_relative_path,
                 extraction_method="python",
+                suggested_canonical_path=suggested_path,
+                path_correction_reason=path_correction_reason,
+                schema_validation_status=schema_validation_status,
             )
             mappings.append(rec)
 
-        return mappings
+        return mappings, review_points
 
     def _resolve_canonical_path(self, source_val: str, parent_path: str) -> str:
         """
-        Hierarchically resolves canonical path using the parent container path.
+        Hierarchically resolves canonical path using the CanonicalPathResolver.
         Specialized for canonical schema: DescriptionMarksAndNumbers (CommodityCode2),
         TariffReference (TariffDistance, DistanceQualifier), RateAndCharges, etc.
         """
-        clean = re.sub(r"\s*/\s*", "/", source_val).strip()
-        lower = clean.lower()
-
-        # ── 1. Priority canonical domain mappings (Commodity & Tariff Distance) ──
-        if "commoditycode" in lower:
-            if "qualifier" in lower:
-                return "Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCodeQualifier2"
-            return "Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCode2"
-
-        if "tariffdistance" in lower or ("tariff" in lower and "distance" in lower):
-            if "qualifier" in lower:
-                return "Detail/LineItem/TariffReference/@DistanceQualifier"
-            return "Detail/LineItem/TariffReference/@TariffDistance"
-
-        if "distancequalifier" in lower:
-            return "Detail/LineItem/TariffReference/@DistanceQualifier"
-
-        # ── 2. Extract path token ──
-        path_match = re.search(r"([A-Za-z0-9_]+/[A-Za-z0-9_/@]+|@[A-Za-z0-9_]+)", clean)
-        if not path_match:
-            return clean
-
-        extracted = path_match.group(1).strip()
-        lower_extracted = extracted.lower()
-
-        # Check extracted token for commodity / tariff distance
-        if "commoditycode" in lower_extracted:
-            if "qualifier" in lower_extracted:
-                return "Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCodeQualifier2"
-            return "Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCode2"
-        if "tariffdistance" in lower_extracted or ("tariff" in lower_extracted and "distance" in lower_extracted):
-            return "Detail/LineItem/TariffReference/@TariffDistance"
-
-        # ── 3. Handle root-anchored paths ──
-        if extracted.startswith(("Header/", "Detail/", "Summary/", "Invoice/")):
-            return extracted
-
-        # Map LineItem direct child elements to full path
-        if extracted.startswith(("DescriptionMarksAndNumbers/", "LineItemQuantityAndWeight/", "RateAndCharges/", "TariffReference/")):
-            return f"Detail/LineItem/{extracted}"
-
-        if extracted.startswith(("BeginningSegmentForCarriersInvoice/", "Currency/", "TransactionSetheader/", "PartyList/", "EquipmentList/")):
-            return f"Header/{extracted}"
-
-        if extracted.startswith("Party/"):
-            return f"Header/PartyList/{extracted}"
-
-        if extracted.startswith("TotalWeightAndCharges/"):
-            return f"Summary/{extracted}"
-
-        normalized_parent = re.sub(r"\s*/\s*", "/", parent_path).strip().rstrip("/")
-
-        # ── 4. Attribute resolution (@Attribute) ──
-        if extracted.startswith("@"):
-            if normalized_parent:
-                if normalized_parent in ("DescriptionMarksAndNumbers", "LineItemQuantityAndWeight", "RateAndCharges", "TariffReference"):
-                    return f"Detail/LineItem/{normalized_parent}/{extracted}"
-                elif normalized_parent in ("TotalWeightAndCharges", "TransactionSetTrailer"):
-                    return f"Summary/{normalized_parent}/{extracted}"
-                return f"{normalized_parent}/{extracted}"
-            return extracted
-
-        # ── 5. Relative element/attribute paths with parent container ──
-        if normalized_parent:
-            parts = extracted.split("/")
-            parent_parts = normalized_parent.split("/")
-            if parent_parts[-1] == parts[0]:
-                merged = "/".join(parent_parts + parts[1:])
-                if not merged.startswith(("Header/", "Detail/", "Summary/", "Invoice/")):
-                    if merged.startswith(("DescriptionMarksAndNumbers", "LineItemQuantityAndWeight", "RateAndCharges", "TariffReference")):
-                        return f"Detail/LineItem/{merged}"
-                return merged
-            combined = f"{normalized_parent}/{extracted}"
-            if not combined.startswith(("Header/", "Detail/", "Summary/", "Invoice/")):
-                if combined.startswith(("DescriptionMarksAndNumbers", "LineItemQuantityAndWeight", "RateAndCharges", "TariffReference")):
-                    return f"Detail/LineItem/{combined}"
-            return combined
-
-        return extracted
+        return self._canonical_resolver.resolve_canonical_path(source_val, parent_path)
 
     def _get_cell_text(self, tc: ET.Element) -> tuple[str, bool]:
         """
@@ -496,8 +574,15 @@ class PythonMatrixReaderService:
         """
         Extracts code translations from auxiliary tables in the docx.
         E.g. Table 3: RateAndCharges/@SpecialChargeOrAllowanceCode 405 -> L108 FUE
+        Rejects non-code entries, documentation fallbacks (e.g. 'Else' -> 'Copy Value'), and long descriptions.
         """
         translations: Dict[str, Dict[str, str]] = {}
+        INVALID_CODE_WORDS = {
+            "else", "otherwise", "default", "none", "copy", "null", "all",
+            "all others", "any", "other", "value", "empty", "omit",
+            "not mapped", "n/a", "element", "hardcode", "hardcoded",
+            "commented out", "blank"
+        }
         for tbl in lookup_tables:
             rows = tbl.findall("./w:tr", DOCX_NS)
             if len(rows) < 2:
@@ -521,8 +606,22 @@ class PythonMatrixReaderService:
                     if len(cells) > max(source_col, target_col):
                         src_val = cells[source_col].strip()
                         tgt_val = cells[target_col].strip()
-                        if src_val and tgt_val:
-                            translations[elem_name][src_val] = tgt_val
+                        if not src_val or not tgt_val:
+                            continue
+                        # Strictly reject invalid code tokens / instructions
+                        if src_val.lower() in INVALID_CODE_WORDS or tgt_val.lower() in INVALID_CODE_WORDS:
+                            continue
+                        if "@" in src_val or "@" in tgt_val:
+                            continue
+                        if " " in src_val or " " in tgt_val:
+                            continue
+                        if any(term in tgt_val.lower() for term in ("copy", "omit", "value", "element", "default", "none")):
+                            continue
+                        if any(term in src_val.lower() for term in ("copy", "omit", "value", "element", "default", "none")):
+                            continue
+                        if len(src_val) > 12 or len(tgt_val) > 12:
+                            continue
+                        translations[elem_name][src_val] = tgt_val
         return translations
 
     def _parse_xlsx(self, path: Path, transaction: str) -> MappingSpecification:

@@ -25,13 +25,13 @@ class XsltPatchService:
             action = proposal.get("action", "unresolved")
             target = proposal.get("target_xpath")
             expression = proposal.get("expression")
-            if action not in {"reuse_existing", "replace_select", "replace_test", "comment_out", "replace_node"}:
-                unresolved.append(self._unresolved(mapping_id, "Only reuse_existing, replace_select, replace_test, comment_out, and replace_node are supported."))
+            if action not in {"reuse_existing", "replace_select", "replace_test", "comment_out", "replace_node", "remove_node"}:
+                unresolved.append(self._unresolved(mapping_id, "Only reuse_existing, replace_select, replace_test, comment_out, replace_node, and remove_node are supported."))
                 continue
             if not target:
                 unresolved.append(self._unresolved(mapping_id, "A target XPath is required."))
                 continue
-            if action not in {"reuse_existing", "comment_out"} and (not isinstance(expression, str) or not expression.strip()):
+            if action not in {"reuse_existing", "comment_out", "remove_node"} and (not isinstance(expression, str) or not expression.strip()):
                 unresolved.append(self._unresolved(mapping_id, "A non-empty expression is required for replacement actions."))
                 continue
             try:
@@ -67,18 +67,33 @@ class XsltPatchService:
                     applied.append({"mapping_id": mapping_id, "action": action, "target_xpath": target, "note": "Commented out in XSLT based on matrix"})
                 continue
 
-            # ── 2. Replace node action (e.g. L108 choose/when or multi-field segment) ──
+            # ── 2. Replace node action (e.g. L108 choose/when or multi-field segment or multi-loop) ──
             if action == "replace_node":
                 parent = node.getparent()
                 if parent is not None:
                     try:
                         clean_expr = self._to_relative_path(expression.strip())
-                        new_node = etree.fromstring(clean_expr.encode("utf-8"))
-                        new_node.tail = node.tail
-                        parent.replace(node, new_node)
-                        applied.append({"mapping_id": mapping_id, "action": action, "target_xpath": target, "note": "Replaced node structure"})
+                        ns_decls = " ".join([f'xmlns:{k}="{v}"' for k, v in (baseline_root.nsmap or {}).items() if k])
+                        wrapped = f"<temp_wrapper {ns_decls}>{clean_expr}</temp_wrapper>"
+                        temp_root = etree.fromstring(wrapped.encode("utf-8"))
+                        children = list(temp_root)
+                        if children:
+                            idx = parent.index(node)
+                            children[-1].tail = node.tail
+                            for i, child in enumerate(children):
+                                parent.insert(idx + i, child)
+                            parent.remove(node)
+                            applied.append({"mapping_id": mapping_id, "action": action, "target_xpath": target, "note": f"Replaced node with {len(children)} element(s)"})
                     except Exception as exc:
                         unresolved.append(self._unresolved(mapping_id, f"Failed to parse replacement XML node: {exc}"))
+                continue
+
+            # ── 3. Remove node action (remove completely when not in matrix) ──
+            if action == "remove_node":
+                parent = node.getparent()
+                if parent is not None:
+                    parent.remove(node)
+                    applied.append({"mapping_id": mapping_id, "action": action, "target_xpath": target, "note": "Removed from XSLT based on matrix"})
                 continue
 
             # Safety checks on the replacement expression (only for replace_* actions)
@@ -89,7 +104,7 @@ class XsltPatchService:
                 unresolved.append(self._unresolved(mapping_id, "Target is not an XSLT instruction."))
                 continue
             attribute = "select" if action == "replace_select" else "test"
-            allowed = {"value-of", "copy-of", "apply-templates", "with-param"} if action == "replace_select" else {"if", "when"}
+            allowed = {"value-of", "copy-of", "apply-templates", "with-param", "for-each"} if action == "replace_select" else {"if", "when"}
             if local not in allowed:
                 unresolved.append(self._unresolved(mapping_id, f"{action} cannot modify xsl:{local}."))
                 continue

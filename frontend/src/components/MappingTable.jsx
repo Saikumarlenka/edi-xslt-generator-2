@@ -1,13 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Search, Filter } from 'lucide-react';
-import HoverExpandBox from './HoverExpandBox';
-
-/**
- * Enhanced mapping table shown in the Review & Results tab.
- * Displays: Segment, Element, Condition, Path, Constants/Values, Rule, Status.
- * Hovering on any box expands it for full visibility.
- * Clear visual distinction for Constants and Crossed-out/Suppressed items.
- */
+import { Search, Sparkles } from 'lucide-react';
+import { HoverTooltip } from './MappingPreview';
 
 function statusClass(status, isCrossed, isConstant) {
   if (isCrossed) return 'crossed';
@@ -53,7 +46,6 @@ export default function MappingTable({ spec }) {
   if (!mappings.length) {
     return (
       <div className="empty-state">
-        <div className="icon"><Table size={24} /></div>
         <h3>No mapping data</h3>
         <p>Mapping specification will appear when the matrix has been extracted.</p>
       </div>
@@ -65,66 +57,67 @@ export default function MappingTable({ spec }) {
   const condCount = mappings.filter(m => m.conditions && m.conditions.length > 0).length;
 
   return (
-    <div className="mapping-table-review">
-      {/* Sub-header & Filters */}
-      <div className="mapping-toolbar" style={{ marginBottom: '12px' }}>
-        <div className="left">
-          <div className="filter-chips-bar" style={{ margin: 0, padding: 0, border: 'none' }}>
-            <button
-              className={`filter-chip ${filterType === 'all' ? 'selected' : ''}`}
-              onClick={() => setFilterType('all')}
-            >
-              All ({mappings.length})
-            </button>
-            <button
-              className={`filter-chip ${filterType === 'active' ? 'selected' : ''}`}
-              onClick={() => setFilterType('active')}
-            >
-              Active Output ({mappings.length - crossedCount})
-            </button>
-            <button
-              className={`filter-chip ${filterType === 'constants' ? 'selected' : ''}`}
-              onClick={() => setFilterType('constants')}
-            >
-              Constants ({constCount})
-            </button>
-            <button
-              className={`filter-chip ${filterType === 'conditional' ? 'selected' : ''}`}
-              onClick={() => setFilterType('conditional')}
-            >
-              Conditional ({condCount})
-            </button>
-            <button
-              className={`filter-chip ${filterType === 'crossed' ? 'selected' : ''}`}
-              onClick={() => setFilterType('crossed')}
-            >
-              Crossed Out ({crossedCount})
-            </button>
-          </div>
+    <div className="clean-mapping-container">
+      <div className="clean-toolbar">
+        <div className="clean-stats-row">
+          <button
+            className={`clean-stat-chip ${filterType === 'all' ? 'active' : ''}`}
+            onClick={() => setFilterType('all')}
+          >
+            <span className="count">{mappings.length}</span>
+            <span className="label">Total</span>
+          </button>
+          <button
+            className={`clean-stat-chip ${filterType === 'active' ? 'active' : ''}`}
+            onClick={() => setFilterType('active')}
+          >
+            <span className="count active-count">{mappings.length - crossedCount}</span>
+            <span className="label">Active</span>
+          </button>
+          <button
+            className={`clean-stat-chip ${filterType === 'constants' ? 'active' : ''}`}
+            onClick={() => setFilterType('constants')}
+          >
+            <span className="count const-count">{constCount}</span>
+            <span className="label">Constants</span>
+          </button>
+          <button
+            className={`clean-stat-chip ${filterType === 'conditional' ? 'active' : ''}`}
+            onClick={() => setFilterType('conditional')}
+          >
+            <span className="count cond-count">{condCount}</span>
+            <span className="label">Conditional</span>
+          </button>
+          <button
+            className={`clean-stat-chip ${filterType === 'crossed' ? 'active' : ''}`}
+            onClick={() => setFilterType('crossed')}
+          >
+            <span className="count crossed-count">{crossedCount}</span>
+            <span className="label">Excluded</span>
+          </button>
         </div>
-        <div className="right">
-          <div className="search-box">
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Search table…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
+
+        <div className="clean-search-box">
+          <Search size={14} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search table…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="table-wrap" style={{ maxHeight: '550px', overflowY: 'auto' }}>
-        <table>
+      <div className="clean-table-card">
+        <table className="clean-table">
           <thead>
             <tr>
-              <th style={{ width: '80px' }}>Segment</th>
-              <th style={{ width: '90px' }}>Element</th>
-              <th style={{ width: '220px' }}>Condition</th>
-              <th style={{ width: '230px' }}>Canonical Path</th>
-              <th style={{ width: '130px' }}>Constant / Value</th>
-              <th style={{ width: '180px' }}>Rule</th>
+              <th style={{ width: '80px' }}>Seg</th>
+              <th style={{ width: '90px' }}>Elem</th>
+              <th style={{ width: '220px' }}>Condition / Loop</th>
+              <th style={{ width: '280px' }}>Canonical Path</th>
+              <th style={{ width: '130px' }}>Constant Value</th>
+              <th>Mapping Rule</th>
               <th style={{ width: '110px' }}>Status</th>
             </tr>
           </thead>
@@ -132,88 +125,127 @@ export default function MappingTable({ spec }) {
             {filtered.map((m, i) => {
               const hasNoPath = !m.source_canonical_path || m.source_canonical_path === 'unknown';
               const isConstantEffective = m.is_constant || (hasNoPath && !m.is_crossed);
+              const hasSuggestion = m.suggested_canonical_path && m.suggested_canonical_path !== m.source_document_reference;
 
               return (
-                <tr key={m.mapping_id || i} className={m.is_crossed ? 'row-crossed' : ''}>
-                  {/* Segment */}
+                <tr key={m.mapping_id || i} className={`clean-row ${m.is_crossed ? 'is-crossed' : ''}`}>
                   <td>
-                    <span className="segment-badge font-mono">
+                    <span className="clean-badge segment">
                       {m.destination_segment || m.destination_element?.slice(0, 2) || '—'}
                     </span>
                   </td>
-
-                  {/* Element */}
                   <td>
-                    <code className={`element-code ${m.is_crossed ? 'text-crossed' : ''}`}>
+                    <code className={`clean-element ${m.is_crossed ? 'text-crossed' : ''}`}>
                       {m.destination_element || m.mapping_id}
                     </code>
                   </td>
-
-                  {/* Condition with Hover-to-Expand Box */}
                   <td>
-                    <HoverExpandBox
-                      content={m.conditions}
-                      title={`Condition for ${m.destination_element}`}
-                      type="condition"
-                      isCrossed={m.is_crossed}
-                      maxPreviewChars={34}
-                    />
-                  </td>
-
-                  {/* Path with Hover-to-Expand Box */}
-                  <td>
-                    {hasNoPath ? (
-                      <div className="badge-constant-inline" title="No path; treated as constant static value">
-                        <span className="dot-mini constant" /> Constant (No Path)
-                      </div>
+                    {m.conditions?.length > 0 ? (
+                      <HoverTooltip
+                        title="Active Condition / Loop Filter"
+                        content={
+                          <div>
+                            <div className="tooltip-main-text">{m.conditions.join('\n')}</div>
+                            {m.parent_condition && (
+                              <div className="tooltip-sub-info">
+                                <span className="tooltip-sub-label">Parent Container:</span> {m.parent_condition}
+                              </div>
+                            )}
+                          </div>
+                        }
+                      >
+                        <span className="clean-cond-text" title={m.conditions.join('; ')}>
+                          {m.conditions.join('; ')}
+                        </span>
+                      </HoverTooltip>
                     ) : (
-                      <HoverExpandBox
-                        content={m.source_canonical_path}
-                        title={`Canonical Path for ${m.destination_element}`}
-                        type="path"
-                        isCrossed={m.is_crossed}
-                        maxPreviewChars={32}
-                      />
+                      <span className="dim-text">—</span>
                     )}
                   </td>
-
-                  {/* Constant / Value with Hover-to-Expand Box */}
                   <td>
-                    <HoverExpandBox
+                    {hasNoPath ? (
+                      <span className="clean-badge constant-label">Constant (No Path)</span>
+                    ) : (
+                      <HoverTooltip
+                        title="Canonical Schema Path & Context"
+                        content={
+                          <div>
+                            <div className="tooltip-main-text font-mono">{m.source_canonical_path}</div>
+                            {m.loop_context && (
+                              <div className="tooltip-sub-info">
+                                <span className="tooltip-sub-label">Enclosing Loop:</span> {m.loop_context}
+                                {m.loop_relative_path && (
+                                  <div><span className="tooltip-sub-label">Relative XPath:</span> {m.loop_relative_path}</div>
+                                )}
+                              </div>
+                            )}
+                            {m.source_document_reference && m.source_document_reference !== m.source_canonical_path && (
+                              <div className="tooltip-sub-info">
+                                <span className="tooltip-sub-label">Matrix Raw:</span> {m.source_document_reference}
+                              </div>
+                            )}
+                            {m.path_correction_reason && (
+                              <div className="tooltip-sub-info schema-note">
+                                <span className="tooltip-sub-label">Schema Suggestion:</span> {m.path_correction_reason}
+                              </div>
+                            )}
+                          </div>
+                        }
+                      >
+                        <div className="path-cell-wrap">
+                          <span className="font-mono path-text" title={m.source_canonical_path}>
+                            {m.source_canonical_path}
+                          </span>
+                          {m.loop_context && m.loop_context !== 'Header' && m.loop_context !== 'Summary' && (
+                            <span className="loop-indicator">in {m.loop_context.split('/').pop()}</span>
+                          )}
+                          {hasSuggestion && (
+                            <span className="suggestion-pill applied" title={m.path_correction_reason}>
+                              <Sparkles size={10} /> Corrected
+                            </span>
+                          )}
+                        </div>
+                      </HoverTooltip>
+                    )}
+                  </td>
+                  <td>
+                    {isConstantEffective ? (
+                      <HoverTooltip
+                        title="Constant Value"
+                        content={
+                          <div className="tooltip-main-text font-mono">
+                            {m.constants?.join(', ') || m.mapping_rule || 'Constant'}
+                          </div>
+                        }
+                      >
+                        <span className="font-mono">{m.constants?.join(', ') || m.mapping_rule || 'Constant'}</span>
+                      </HoverTooltip>
+                    ) : (
+                      <span className="dim-text">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <HoverTooltip
+                      title="Matrix Mapping Rule & Logic"
                       content={
-                        m.constants?.length > 0
-                          ? m.constants.join(', ')
-                          : isConstantEffective
-                          ? m.mapping_rule || 'Constant'
-                          : '—'
+                        <div>
+                          <div className="tooltip-main-text">{m.mapping_rule || '—'}</div>
+                          {m.transformations?.length > 0 && (
+                            <div className="tooltip-sub-info">
+                              <span className="tooltip-sub-label">Transformations:</span> {m.transformations.join(', ')}
+                            </div>
+                          )}
+                        </div>
                       }
-                      title={`Constant Value for ${m.destination_element}`}
-                      type="constant"
-                      isConstant={isConstantEffective}
-                      isCrossed={m.is_crossed}
-                      maxPreviewChars={20}
-                    />
+                    >
+                      <span className="rule-text" title={m.mapping_rule}>
+                        {m.mapping_rule || '—'}
+                      </span>
+                    </HoverTooltip>
                   </td>
-
-                  {/* Mapping Rule */}
                   <td>
-                    <HoverExpandBox
-                      content={m.mapping_rule}
-                      title={`Rule for ${m.destination_element}`}
-                      type="rule"
-                      isCrossed={m.is_crossed}
-                      maxPreviewChars={26}
-                    />
-                  </td>
-
-                  {/* Status */}
-                  <td>
-                    <span className={`status-pill ${statusClass(m.implementation_status, m.is_crossed, isConstantEffective)}`}>
-                      {m.is_crossed
-                        ? 'Crossed Out'
-                        : isConstantEffective
-                        ? 'Constant'
-                        : (m.implementation_status || 'unresolved').replace(/_/g, ' ')}
+                    <span className={`clean-status ${statusClass(m.implementation_status, m.is_crossed, isConstantEffective)}`}>
+                      {m.is_crossed ? 'Excluded' : isConstantEffective ? 'Constant' : 'Active'}
                     </span>
                   </td>
                 </tr>

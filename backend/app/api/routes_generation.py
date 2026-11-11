@@ -478,6 +478,24 @@ async def update_mapping(job_id: str, body: dict):
     job["mapping"]["mappings"] = mappings
     job["mapping_count"] = len(mappings)
 
+    # Sync review points status
+    if "review_points" in job["mapping"] and isinstance(job["mapping"]["review_points"], list):
+        mapping_by_id = {m.get("mapping_id"): m for m in mappings if isinstance(m, dict)}
+        for rp in job["mapping"]["review_points"]:
+            mid = rp.get("mapping_id")
+            if mid in mapping_by_id:
+                m = mapping_by_id[mid]
+                cur_path = m.get("source_canonical_path", "")
+                sug_path = rp.get("suggested_canonical_path", "")
+                mat_text = rp.get("source_document_reference", "")
+                if cur_path == sug_path:
+                    rp["status"] = "applied"
+                elif cur_path == mat_text:
+                    rp["status"] = "reverted"
+                else:
+                    rp["status"] = "customized"
+                rp["source_canonical_path"] = cur_path
+
     folder = Path(job["folder"])
     (folder / "mapping.json").write_text(
         json.dumps(job["mapping"], indent=2), encoding="utf-8",

@@ -7,6 +7,7 @@ backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from app.services.python_matrix_reader import PythonMatrixReaderService
+from app.services.canonical_path_resolver import CanonicalPathResolver
 from app.services.python_xslt_proposal_service import PythonXsltProposalService
 from app.services.xslt_patch_service import XsltPatchService
 from app.services.validation_service import XsltValidationService
@@ -253,6 +254,164 @@ class TestPythonMatrixReaderAndProposals(unittest.TestCase):
             self.assertNotIn("<B308>", output_xml)
             self.assertNotIn("<S5", output_xml)
             self.assertNotIn("<L7", output_xml)
+        finally:
+            if out_path.exists():
+                out_path.unlink()
+
+    def test_daikin_matrix_removes_unmapped_c2_and_adds_multi_n9_and_n1(self):
+        daikin_path = Path("data/jobs/0422b400-f674-48ce-8830-705cdd589799/input/Daikin_America_210_Mapping_Document.docx")
+        if not daikin_path.exists():
+            return
+
+        reader = PythonMatrixReaderService()
+        proposal_svc = PythonXsltProposalService()
+        patcher = XsltPatchService()
+
+        spec = reader.read_matrix(daikin_path, "210")
+        # Ensure N9 does not bleed Currency
+        n9_paths = [m.source_canonical_path for m in spec.mappings if "N9" in m.destination_element]
+        self.assertTrue(all("Currency" not in p for p in n9_paths))
+        self.assertTrue(any("Header/ReferenceList/ReferenceInformation" in p for p in n9_paths))
+
+        # Check C301 is active (not crossed out)
+        c301_maps = [m for m in spec.mappings if m.destination_element == "C301"]
+        self.assertTrue(any(not m.is_crossed for m in c301_maps))
+
+        # Check proposals
+        proposals = proposal_svc.generate_proposals(
+            self.baseline_xslt,
+            [m.model_dump() for m in spec.mappings],
+            "210",
+        )
+        out_path = Path("data/test_daikin_unit_out.xslt")
+        try:
+            res = patcher.apply_proposals(self.baseline_xslt, proposals, out_path)
+            content = out_path.read_text(encoding="utf-8")
+
+            # C2 removed completely
+            self.assertNotIn("<ns0:C2>", content)
+            self.assertNotIn("<C201>", content)
+
+            # C301 active
+            self.assertIn("<C301>", content)
+
+            # Both dynamic loop and static segment in N9
+            self.assertIn("12</N901>", content)
+            self.assertIn("DAI</N902>", content)
+            self.assertIn("Header/ReferenceList/ReferenceInformation", content)
+
+            # N1 party loops have N103 and N104
+            self.assertIn("<N103>ZZ</N103>", content)
+            self.assertIn("@EDICode='SF'", content)
+            self.assertIn("@EDICode='ST'", content)
+        finally:
+            if out_path.exists():
+                out_path.unlink()
+
+    def test_schema_fuzzy_spelling_and_container_corrections(self):
+        """Verifies spelling corrections, container corrections, and review points."""
+        resolver = CanonicalPathResolver()
+
+        # 1. Typo in CommodityCode -> Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCode2
+        res1 = resolver.resolve_with_diagnostics("ComodityCode", destination_element="L707")
+        self.assertTrue(res1.is_corrected)
+        self.assertEqual(res1.canonical_path, "Detail/LineItem/DescriptionMarksAndNumbers/@CommodityCode2")
+        self.assertEqual(res1.issue_type, "spelling")
+        self.assertIn("@CommodityCode2", res1.reason)
+
+        # 2. Typo in TariffServiceCode -> Header/BeginningSegmentForCarriersInvoice/@TariffServiceCode
+        res2 = resolver.resolve_with_diagnostics("TarriffServiceCode", destination_element="B312")
+        self.assertTrue(res2.is_corrected)
+        self.assertEqual(res2.canonical_path, "Header/BeginningSegmentForCarriersInvoice/@TariffServiceCode")
+        self.assertEqual(res2.issue_type, "spelling")
+
+        # 3. Invalid container Currency for ReferenceInformation -> Header/ReferenceList/ReferenceInformation/@EDICode
+        res3 = resolver.resolve_with_diagnostics("Header/Currency/ReferenceInformation/@EDICode", destination_element="N901")
+        self.assertTrue(res3.is_corrected)
+        self.assertEqual(res3.canonical_path, "Header/ReferenceList/ReferenceInformation/@EDICode")
+        self.assertEqual(res3.issue_type, "container_structure")
+        self.assertIn("Header/ReferenceList", res3.reason)
+
+        # 4. Correct path kept as-is without flagging
+        res4 = resolver.resolve_with_diagnostics(
+            "Header/BeginningSegmentForCarriersInvoice/@InvoiceNumber",
+            destination_element="B302",
+        )
+        self.assertFalse(res4.is_corrected)
+        self.assertEqual(res4.canonical_path, "Header/BeginningSegmentForCarriersInvoice/@InvoiceNumber")
+        self.assertEqual(res4.issue_type, "none")
+
+        # 5. Typo in NetAmountDue (NetAmoutDue)
+        res5 = resolver.resolve_with_diagnostics("NetAmoutDue", destination_element="B307")
+        self.assertTrue(res5.is_corrected)
+        self.assertEqual(res5.canonical_path, "Header/BeginningSegmentForCarriersInvoice/@NetAmountDue")
+        self.assertEqual(res5.issue_type, "spelling")
+
+    def test_lxloop1_product_line_item_exclusion_condition(self):
+        """
+        Verifies LXLoop1 condition when matrix specifies:
+        'Do not product line items' / 'Populate only when special charge allowance code is not empty'.
+        Checks extraction condition, proposal generation, patch application, and transform output.
+        """
+        from app.services.python_matrix_reader import is_lx_special_charge_filter
+        
+        # 1. Test helper regex
+        note_text = "Do not  product line items\nPopulate only when special charge allowance code is not empty"
+        self.assertTrue(is_lx_special_charge_filter(note_text))
+        self.assertTrue(is_lx_special_charge_filter("where specialchargeallowncecode must not be empty only for those we need to populate the lxloop"))
+        self.assertTrue(is_lx_special_charge_filter("RateAndCharges/@SpecialChargeOrAllowanceCode != ''"))
+        self.assertFalse(is_lx_special_charge_filter("Standard line item without filter"))
+
+        # 2. Test proposal generation with LX condition
+        mappings_with_lx_filter = [
+            {
+                "mapping_id": "MAP-LX01",
+                "destination_segment": "LX",
+                "destination_element": "LX01",
+                "source_canonical_path": "position()",
+                "mapping_rule": "Position() in loop",
+                "parent_segment": "LXLoop1",
+                "parent_condition": "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)",
+                "conditions": ["RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"],
+                "related_notes": [note_text],
+            }
+        ]
+
+        proposal_service = PythonXsltProposalService()
+        proposals = proposal_service.generate_proposals(self.baseline_xslt, mappings_with_lx_filter, "210")
+        
+        # Verify MAP-LOOP-LXLOOP1-CONDITION proposal exists
+        lx_prop = next((p for p in proposals if p["mapping_id"] == "MAP-LOOP-LXLOOP1-CONDITION"), None)
+        self.assertIsNotNone(lx_prop)
+        self.assertEqual(lx_prop["action"], "replace_select")
+        self.assertIn("SpecialChargeOrAllowanceCode != ''", lx_prop["expression"])
+
+        # 3. Test patch application to baseline XSLT
+        patch_service = XsltPatchService()
+        out_path = self.project_root / "backend" / "data" / "test_lx_patched_210.xslt"
+        try:
+            res = patch_service.apply_proposals(self.baseline_xslt, proposals, out_path)
+            self.assertTrue(out_path.exists())
+            content = out_path.read_text(encoding="utf-8")
+            self.assertIn("Detail/LineItemList/LineItem[RateAndCharges/@SpecialChargeOrAllowanceCode != '']", content)
+
+            # 4. Transform test XML: Line items 1 & 2 (charges) included, line item 3 (product) excluded
+            patched_tree = etree.parse(str(out_path))
+            transform = etree.XSLT(patched_tree)
+            test_doc = etree.parse(str(self.canonical_xml))
+            result_doc = transform(test_doc)
+            result_str = str(result_doc)
+
+            # Only 2 LXLoop1 segments generated
+            out_xml = etree.fromstring(bytes(result_doc))
+            lx_loops = out_xml.xpath("//*[local-name()='LXLoop1']")
+            self.assertEqual(len(lx_loops), 2)
+
+            # Loop 1 = Fuel Surcharge, Loop 2 = Line Haul
+            l502_nodes = out_xml.xpath("//*[local-name()='LXLoop1']//*[local-name()='L502']")
+            self.assertEqual(len(l502_nodes), 2)
+            self.assertIn("Fuel Surcharge", l502_nodes[0].text)
+            self.assertIn("Line Haul", l502_nodes[1].text)
         finally:
             if out_path.exists():
                 out_path.unlink()

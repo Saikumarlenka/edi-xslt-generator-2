@@ -1,5 +1,20 @@
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel, Field
+
+class ReviewPoint(BaseModel):
+    mapping_id: str
+    destination_element: str
+    destination_segment: str = ""
+    source_document_reference: str = ""
+    source_canonical_path: str = ""
+    suggested_canonical_path: str = ""
+    loop_context: str = ""
+    loop_relative_path: str = ""
+    suggested_loop_path: str = ""
+    issue_type: str = "spelling"  # "spelling" | "container_structure" | "path_completion" | "unresolved"
+    message: str = ""
+    confidence: float = 1.0
+    status: str = "applied"  # "applied" | "suggested" | "reverted"
 
 class MappingRecord(BaseModel):
     mapping_id: str = "unknown"
@@ -23,10 +38,17 @@ class MappingRecord(BaseModel):
     patch_id: str | None = None
     is_crossed: bool = False
     is_constant: bool = False
+    is_not_in_schema: bool = False
+    user_confirmation: str | None = None  # "ignore" | "keep" | None
     parent_segment: str = ""
     parent_path: str = ""
     parent_condition: str = ""
+    loop_context: str = ""
+    loop_relative_path: str = ""
     extraction_method: str = "python"
+    suggested_canonical_path: str | None = None
+    path_correction_reason: str | None = None
+    schema_validation_status: str = "valid"  # "valid" | "corrected" | "not_in_schema" | "constant"
 
 class MappingSpecification(BaseModel):
     transaction: str
@@ -34,6 +56,7 @@ class MappingSpecification(BaseModel):
     mappings: list[MappingRecord]
     document_warnings: list[str] = Field(default_factory=list)
     extraction_method: str = "python"
+    review_points: list[ReviewPoint] = Field(default_factory=list)
 
 class GenerationRequest(BaseModel):
     transaction: str

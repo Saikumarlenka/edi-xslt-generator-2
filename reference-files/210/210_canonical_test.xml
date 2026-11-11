@@ -55,6 +55,13 @@
 				<LineItemQuantityAndWeight LadingLineItemNumber="1" BilledRatedAsQuantity="1" BilledRatedAsQualifier="FR"/>
 				<RateAndCharges LadingLineItemNumber="2" FreightRate="300.00" RateValueQualifier="FR" Charge="300.00" RateCombinationPointCode="" SpecialChargeOrAllowanceCode="LHS"/>
 			</LineItem>
+					<LineItem>
+				<AssignedNumber AssignedNumber="3"/>
+				<ReferenceList/>
+				<DescriptionMarksAndNumbers LadingLineItemNumber="3" LadingDescription="food and beverage packaging" CommodityCode2="125" CommodityCodeQualifier2="T"/>
+				<LineItemQuantityAndWeight LadingLineItemNumber="3" Weight="22102.2" WeightQualifier="L" LadingQuantity="840" LadingQuantityPackagingFormCode="PLT" WeightUnitCode="L"/>
+				<TariffReference DistanceQualifier="M" TariffDistance="838"/>
+			</LineItem>
 		</LineItemList>
 	</Detail>
 	<Summary>

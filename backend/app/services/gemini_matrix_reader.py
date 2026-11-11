@@ -9,7 +9,9 @@ from google import genai
 from google.genai import types
 
 from app.core.config import settings
-from app.models.mapping import MappingSpecification
+from app.models.mapping import MappingSpecification, ReviewPoint
+from app.services.canonical_path_resolver import CanonicalPathResolver
+from app.services.python_matrix_reader import is_lx_special_charge_filter
 from app.services.prompt_manager import MATRIX_SYSTEM, MATRIX_PROMPT_VERSION
 
 log = logging.getLogger(__name__)
@@ -179,14 +181,30 @@ class GeminiMatrixReaderService:
                 m.source_canonical_path = "Detail/LineItem/RateAndCharges/@SpecialChargeOrAllowanceCode"
                 m.is_crossed = False
 
+            # Check for LXLoop1 condition (Product Line Items exclusion / SpecialChargeOrAllowanceCode filter)
+            all_m_text = " ".join([
+                m.mapping_rule or "",
+                m.source_canonical_path or "",
+                m.source_document_reference or "",
+                m.default_behavior or "",
+                " ".join(m.related_notes or []),
+                " ".join(m.conditions or []),
+            ]).lower()
+            if (dest_elem.startswith("LX") or m.destination_segment in ("LX", "LXLoop1") or m.parent_segment in ("LX", "LXLoop1")) and is_lx_special_charge_filter(all_m_text):
+                lx_cond = "RateAndCharges/@SpecialChargeOrAllowanceCode != '' (Exclude product line items)"
+                if lx_cond not in m.conditions:
+                    m.conditions.append(lx_cond)
+                m.parent_condition = lx_cond
+
+            # Resolve missing canonical paths from authoritative dictionary / test file schemas
+            if not m.source_canonical_path or m.source_canonical_path in ("unknown", "none", "not_specified", ""):
+                resolved = CanonicalPathResolver().resolve_canonical_path(m.mapping_rule or dest_elem)
+                if resolved:
+                    m.source_canonical_path = resolved
+
             # Prefix relative paths under LineItem if not already prefixed
             if m.source_canonical_path and not m.source_canonical_path.startswith(("Header/", "Detail/", "Summary/", "Invoice/", "position()")):
-                if m.source_canonical_path.startswith(("DescriptionMarksAndNumbers/", "LineItemQuantityAndWeight/", "RateAndCharges/", "TariffReference/")):
-                    m.source_canonical_path = f"Detail/LineItem/{m.source_canonical_path}"
-                elif m.source_canonical_path.startswith(("BeginningSegmentForCarriersInvoice/", "Currency/", "TransactionSetheader/", "PartyList/", "EquipmentList/")):
-                    m.source_canonical_path = f"Header/{m.source_canonical_path}"
-                elif m.source_canonical_path.startswith("TotalWeightAndCharges/"):
-                    m.source_canonical_path = f"Summary/{m.source_canonical_path}"
+                m.source_canonical_path = CanonicalPathResolver().resolve_canonical_path(m.source_canonical_path)
 
             # 3. Check for crossed out / commented out
             # Never mark as crossed out if it's L108 or an IF/THEN condition rule
@@ -202,6 +220,53 @@ class GeminiMatrixReaderService:
                 m.is_crossed = False
                 if m.implementation_status == "excluded_crossed_out":
                     m.implementation_status = "unresolved"
+
+            # Resolve canonical paths and run diagnostics for typos / schema corrections
+            if not m.is_crossed and not m.is_constant:
+                diag = CanonicalPathResolver().resolve_with_diagnostics(
+                    source_val=m.source_canonical_path or m.mapping_rule or dest_elem,
+                    parent_path=m.parent_path,
+                    destination_element=dest_elem,
+                    transaction=spec.transaction or "210",
+                )
+                if diag.canonical_path:
+                    m.source_canonical_path = diag.canonical_path
+                if diag.issue_type == "not_in_schema":
+                    m.is_not_in_schema = True
+                    m.schema_validation_status = "not_in_schema"
+                    m.path_correction_reason = diag.reason
+                    spec.review_points.append(
+                        ReviewPoint(
+                            mapping_id=m.mapping_id,
+                            destination_element=dest_elem,
+                            destination_segment=m.destination_segment,
+                            source_document_reference=m.source_document_reference or m.mapping_rule or dest_elem,
+                            source_canonical_path=m.source_canonical_path,
+                            suggested_canonical_path=m.source_canonical_path,
+                            issue_type="not_in_schema",
+                            message=diag.reason,
+                            confidence=diag.confidence,
+                            status="pending_confirmation",
+                        )
+                    )
+                elif diag.is_corrected:
+                    m.suggested_canonical_path = diag.suggested_path
+                    m.path_correction_reason = diag.reason
+                    m.schema_validation_status = "corrected"
+                    spec.review_points.append(
+                        ReviewPoint(
+                            mapping_id=m.mapping_id,
+                            destination_element=dest_elem,
+                            destination_segment=m.destination_segment,
+                            source_document_reference=m.source_document_reference or m.mapping_rule or dest_elem,
+                            source_canonical_path=m.source_canonical_path,
+                            suggested_canonical_path=diag.suggested_path,
+                            issue_type=diag.issue_type,
+                            message=diag.reason,
+                            confidence=diag.confidence,
+                            status="applied",
+                        )
+                    )
 
             # 4. Check for constant / static value
             # Rule: "if there is no path means it is a constant"
